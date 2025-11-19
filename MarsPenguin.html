@@ -2,77 +2,84 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>火星企鵝：基地任務</title>
+    <!-- 4. 手機鎖定設定：禁止縮放，鎖定比例 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>火星企鵝：探索完成版</title>
     <style>
-        body { margin: 0; overflow: hidden; font-family: "Microsoft JhengHei", sans-serif; background-color: #0f0505; }
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            font-family: "Microsoft JhengHei", sans-serif; 
+            background-color: #0f0505;
+            /* 防止手機上的預設觸控行為 (如捲動、縮放) */
+            touch-action: none; 
+            user-select: none;
+            -webkit-user-select: none;
+        }
         
-        /* 左上：探索日誌 */
+        /* 左上：任務面板 */
         #mission-panel {
             position: absolute;
             top: 20px;
             left: 20px;
-            width: 220px;
+            width: 200px;
             background: rgba(20, 30, 40, 0.9);
             border: 2px solid #446688;
             border-radius: 10px;
             padding: 15px;
             color: #ccddff;
             box-shadow: 0 0 20px rgba(0, 150, 255, 0.2);
-            pointer-events: none; /* 讓滑鼠可以穿透去點擊後面的場景 */
+            pointer-events: none; 
+            z-index: 10;
         }
         #mission-panel h2 {
-            margin: 0 0 10px 0;
+            margin: 0 0 5px 0;
             font-size: 16px;
             border-bottom: 1px solid #446688;
             padding-bottom: 5px;
             color: #00ffff;
         }
-        #log-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            font-size: 13px;
-        }
-        #log-list li {
-            padding: 5px 0;
-            color: #667788;
-            transition: color 0.5s;
-        }
-        #log-list li.found {
-            color: #aaffaa;
+        /* 3. 計時器樣式 */
+        #timer-display {
+            font-size: 20px;
+            font-family: monospace;
+            color: #ffcc00;
             font-weight: bold;
-            text-shadow: 0 0 5px rgba(0,255,0,0.5);
+            margin-bottom: 10px;
+            text-align: center;
+            background: rgba(0,0,0,0.3);
+            padding: 5px;
+            border-radius: 4px;
         }
-        #log-list li.found::before {
-            content: "✔ ";
+        #log-list {
+            list-style: none; padding: 0; margin: 0; font-size: 13px;
         }
-        #log-list li::before {
-            content: "○ ";
-        }
+        #log-list li { padding: 5px 0; color: #667788; transition: color 0.5s; }
+        #log-list li.found { color: #aaffaa; font-weight: bold; text-shadow: 0 0 5px rgba(0,255,0,0.5); }
+        #log-list li.found::before { content: "✔ "; }
+        #log-list li::before { content: "○ "; }
 
         /* 右上：雷達 */
         #radar-container {
             position: absolute;
-            top: 20px;
-            right: 20px;
-            width: 160px;
-            height: 160px;
+            top: 20px; right: 20px;
+            width: 120px; height: 120px; /* 手機上稍微調小一點以免遮擋 */
             background: rgba(0, 20, 10, 0.85);
             border-radius: 50%;
             border: 3px solid #446644;
             box-shadow: 0 0 15px rgba(50, 255, 50, 0.2);
             overflow: hidden;
+            z-index: 10;
         }
 
-        /* 中下：對話框 */
+        /* 中下：訊息框 */
         #message-box {
             position: absolute;
-            bottom: 50px;
-            left: 50%;
+            bottom: 30px; left: 50%;
             transform: translateX(-50%);
             background: rgba(20, 15, 15, 0.95);
             color: #eebb99;
-            padding: 15px 30px;
+            padding: 12px 25px;
             border-radius: 5px;
             font-size: 16px;
             display: none;
@@ -80,47 +87,92 @@
             border: 2px solid #884444;
             text-align: center;
             min-width: 200px;
-            transition: opacity 0.3s;
+            z-index: 10;
         }
 
-        /* 探索通知特效 */
+        /* 探索通知 */
         .notification {
-            position: absolute;
-            top: 40%;
-            left: 50%;
+            position: absolute; top: 40%; left: 50%;
             transform: translate(-50%, -50%);
-            font-size: 30px;
-            color: #ffff00;
+            font-size: 24px; color: #ffff00;
             font-weight: bold;
             text-shadow: 0 0 10px orange;
             pointer-events: none;
             animation: floatUp 2s forwards;
+            z-index: 20;
         }
         @keyframes floatUp {
             0% { opacity: 0; transform: translate(-50%, -30%); }
             20% { opacity: 1; transform: translate(-50%, -50%); }
             100% { opacity: 0; transform: translate(-50%, -80%); }
         }
+
+        /* 3. 結算畫面 (Victory Modal) */
+        #victory-modal {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none; /* 預設隱藏 */
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 100;
+            backdrop-filter: blur(5px);
+        }
+        .modal-content {
+            background: linear-gradient(135deg, #2b1d1d, #442222);
+            padding: 40px;
+            border-radius: 15px;
+            border: 2px solid #ffaa00;
+            text-align: center;
+            box-shadow: 0 0 50px rgba(255, 100, 0, 0.5);
+            color: white;
+            max-width: 80%;
+        }
+        .modal-content h1 { margin-top: 0; color: #ffcc00; }
+        .modal-content .time-stat { font-size: 2rem; font-weight: bold; color: #00ffff; margin: 20px 0; }
+        .modal-btn {
+            padding: 10px 20px; margin: 10px;
+            font-size: 16px; border: none; border-radius: 5px;
+            cursor: pointer; font-weight: bold;
+        }
+        .btn-primary { background: #ffaa00; color: #330000; }
+        .btn-secondary { background: #444; color: #ccc; }
+        .btn-primary:active, .btn-secondary:active { transform: scale(0.95); }
+
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
 
 <div id="mission-panel">
+    <div id="timer-display">0.0s</div>
     <h2>探索日誌</h2>
-    <ul id="log-list">
-        <!-- JS 會自動填入 -->
-    </ul>
+    <ul id="log-list"></ul>
 </div>
 
 <div id="radar-container">
-    <canvas id="radar-canvas" width="160" height="160"></canvas>
+    <canvas id="radar-canvas" width="120" height="120"></canvas>
 </div>
 
 <div id="message-box"></div>
 
+<!-- 結算視窗 -->
+<div id="victory-modal">
+    <div class="modal-content">
+        <h1>🏆 探索完成！</h1>
+        <p>你已經找齊了所有火星樣本。</p>
+        <p>總耗時</p>
+        <div class="time-stat" id="final-time">0.0s</div>
+        <div>
+            <button class="modal-btn btn-secondary" onclick="continueGame()">繼續閒晃</button>
+            <button class="modal-btn btn-primary" onclick="location.reload()">重新挑戰</button>
+        </div>
+    </div>
+</div>
+
 <script>
-    // --- 1. 場景設定 ---
+    // --- 1. 場景與手機優化 ---
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x150a0a);
     scene.fog = new THREE.Fog(0x150a0a, 20, 90);
@@ -132,6 +184,8 @@
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    // 防止手機視網膜螢幕模糊
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); 
     document.body.appendChild(renderer.domElement);
 
     // 燈光
@@ -148,16 +202,16 @@
     dirLight.shadow.camera.right = 100;
     scene.add(dirLight);
 
-    // --- 2. 地形系統 ---
+    // --- 2. 地形 ---
     function getTerrainHeight(x, z) {
         const scale1 = 0.05;
         const scale2 = 0.15;
         let y = Math.sin(x * scale1) * 2 + Math.cos(z * scale1) * 2;
         y += Math.sin(x * scale2 + z * scale2) * 0.5;
-        // 讓基地周圍稍微平坦一點
-        const distToBase = Math.sqrt(x*x + z*z);
+        // 基地周圍 (10, -10) 平坦化
+        const distToBase = Math.sqrt((x-10)*(x-10) + (z+10)*(z+10));
         if (distToBase < 15) {
-            y = y * (distToBase / 15); // 靠近 0,0 點時變平
+            y = y * (distToBase / 15); 
         }
         return y;
     }
@@ -170,8 +224,7 @@
         posAttribute.setZ(i, getTerrainHeight(x, -y));
     }
     groundGeo.computeVertexNormals();
-    const groundMat = new THREE.MeshStandardMaterial({ color: 0x773322, roughness: 0.9 });
-    const ground = new THREE.Mesh(groundGeo, groundMat);
+    const ground = new THREE.Mesh(groundGeo, new THREE.MeshStandardMaterial({ color: 0x773322, roughness: 0.9 }));
     ground.rotation.x = -Math.PI / 2;
     ground.receiveShadow = true;
     scene.add(ground);
@@ -184,8 +237,7 @@
     for (let i = 0; i < 2000; i++) {
         const x = (Math.random() - 0.5) * 200;
         const z = (Math.random() - 0.5) * 200;
-        // 避免石頭長在基地裡
-        if (Math.sqrt(x*x + z*z) > 10) {
+        if (Math.sqrt((x-10)*(x-10) + (z+10)*(z+10)) > 12) { // 避開新基地位置
             dummy.position.set(x, getTerrainHeight(x, z) + 0.1, z);
             dummy.rotation.set(Math.random()*3, Math.random()*3, Math.random()*3);
             const s = 0.5 + Math.random();
@@ -198,16 +250,20 @@
     pebbleMesh.castShadow = true;
     scene.add(pebbleMesh);
 
-    // --- 3. 企鵝主角 (升級版) ---
+    // --- 3. 企鵝主角 (移除圍巾) ---
     const penguin = new THREE.Group();
     const penguinScale = 1.2;
     penguin.scale.set(penguinScale, penguinScale, penguinScale);
-    
-    // 身體部件
+    // 設定初始位置為 0,0 (基地在旁邊)
+    penguin.position.set(0, 0, 0);
+
+    // 身體
     const body = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 1, 2.5, 16), new THREE.MeshLambertMaterial({ color: 0x222222 }));
     body.position.y = 1.25; body.castShadow = true; penguin.add(body);
     const belly = new THREE.Mesh(new THREE.SphereGeometry(0.75, 16, 16), new THREE.MeshLambertMaterial({ color: 0xffffff }));
     belly.position.set(0, 1, 0.3); belly.scale.set(1, 1.5, 0.5); penguin.add(belly);
+    
+    // 眼睛
     const eyeGeo = new THREE.SphereGeometry(0.1, 8, 8);
     const eyeMat = new THREE.MeshBasicMaterial({ color: 0xffff00 });
     const lEye = new THREE.Mesh(eyeGeo, eyeMat); lEye.position.set(-0.3, 2.1, 0.65); penguin.add(lEye);
@@ -215,15 +271,7 @@
     const beak = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.5, 16), new THREE.MeshLambertMaterial({ color: 0xffa500 }));
     beak.rotation.x = Math.PI/2; beak.position.set(0, 1.9, 0.9); penguin.add(beak);
     
-    // [新增] 圍巾 (Scarf) - 會在動畫中擺動
-    const scarfGeo = new THREE.BoxGeometry(0.3, 0.8, 0.1);
-    const scarfMat = new THREE.MeshLambertMaterial({ color: 0xff3333 });
-    const scarf = new THREE.Mesh(scarfGeo, scarfMat);
-    scarf.position.set(0, 1.8, -0.6);
-    scarf.rotation.x = 0.5;
-    penguin.add(scarf);
-    
-    // [新增] 氧氣背包 (Backpack)
+    // 氧氣背包 (保留)
     const packGeo = new THREE.BoxGeometry(1.2, 1.5, 0.6);
     const packMat = new THREE.MeshStandardMaterial({ color: 0xeeeeee });
     const backpack = new THREE.Mesh(packGeo, packMat);
@@ -231,12 +279,11 @@
     backpack.castShadow = true;
     penguin.add(backpack);
     
-    // 背包天線
+    // 天線
     const antGeo = new THREE.CylinderGeometry(0.05, 0.05, 0.8);
     const ant = new THREE.Mesh(antGeo, new THREE.MeshStandardMaterial({color:0x888888}));
     ant.position.set(0.4, 2, -0.6);
     penguin.add(ant);
-    // 天線紅燈
     const antLight = new THREE.Mesh(new THREE.SphereGeometry(0.1), new THREE.MeshBasicMaterial({color:0xff0000}));
     antLight.position.set(0, 0.4, 0);
     ant.add(antLight);
@@ -261,27 +308,24 @@
     scene.add(penguin);
 
     // 點擊光圈
-    const markerGeo = new THREE.RingGeometry(0.4, 0.6, 32);
-    const markerMat = new THREE.MeshBasicMaterial({ color: 0xffaa00, transparent: true, opacity: 0, side: THREE.DoubleSide });
-    const clickMarker = new THREE.Mesh(markerGeo, markerMat);
+    const clickMarker = new THREE.Mesh(new THREE.RingGeometry(0.4, 0.6, 32), new THREE.MeshBasicMaterial({ color: 0xffaa00, transparent: true, opacity: 0, side: THREE.DoubleSide }));
     clickMarker.rotation.x = -Math.PI / 2;
     scene.add(clickMarker);
 
-    // --- 4. 探索系統與物件生成 ---
+    // --- 4. 物件生成 ---
     const objects = [];
     const discoveryLog = document.getElementById('log-list');
     
-    // 定義有哪些特殊物件需要被記錄
+    // 2. 基地位置改到 (10, -10)，稍微遠離原點
     const missionItems = [
-        { id: 'base', name: "火星前哨站", desc: "這是我的家，溫暖又安全。", x: 0, z: 0, type: 'base' },
+        { id: 'base', name: "火星前哨站", desc: "這是我的家，溫暖又安全。", x: 10, z: -10, type: 'base' },
         { id: 'rover1', name: "好奇號殘骸", desc: "看起來還能修好...大概吧？", x: 35, z: -40, type: 'rover' },
         { id: 'crystal', name: "能量水晶群", desc: "發出神祕的嗡嗡聲。", x: -45, z: 20, type: 'crystal' },
         { id: 'monolith', name: "黑色石碑", desc: "不知道是誰放在這裡的。", x: 60, z: 50, type: 'monolith' },
         { id: 'skeleton', name: "巨大化石", desc: "這骨頭...看起來像恐龍？", x: -60, z: -50, type: 'skeleton' },
-        { id: 'solar', name: "太陽能陣列", desc: "為基地提供電力的來源。", x: -15, z: 5, type: 'solar' }
+        { id: 'solar', name: "太陽能陣列", desc: "為基地提供電力的來源。", x: -5, z: 15, type: 'solar' }
     ];
 
-    // 初始化 UI 清單
     missionItems.forEach(item => {
         const li = document.createElement('li');
         li.id = 'log-' + item.id;
@@ -293,124 +337,67 @@
         const y = getTerrainHeight(x, z);
         const group = new THREE.Group();
         group.position.set(x, y, z);
-
-        // 圓頂
-        const domeGeo = new THREE.SphereGeometry(5, 32, 16, 0, Math.PI * 2, 0, Math.PI/2);
-        const domeMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3, metalness: 0.5 });
-        const dome = new THREE.Mesh(domeGeo, domeMat);
+        const dome = new THREE.Mesh(new THREE.SphereGeometry(5, 32, 16, 0, Math.PI*2, 0, Math.PI/2), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3, metalness: 0.5 }));
         group.add(dome);
-
-        // 窗戶
-        const winGeo = new THREE.BoxGeometry(1.5, 1.5, 1);
-        const winMat = new THREE.MeshBasicMaterial({ color: 0x00ffff });
-        for(let i=0; i<3; i++) {
-            const win = new THREE.Mesh(winGeo, winMat);
-            win.position.set(Math.sin(i*2)*3.5, 2, Math.cos(i*2)*3.5);
-            win.lookAt(0, 2, 0);
-            group.add(win);
-        }
-        
         // 門
         const door = new THREE.Mesh(new THREE.BoxGeometry(2, 3, 1), new THREE.MeshStandardMaterial({color:0x333333}));
-        door.position.set(0, 1.5, 4.8);
-        group.add(door);
-
-        // 內部光
-        const light = new THREE.PointLight(0x00ffff, 1, 15);
-        light.position.set(0, 2, 0);
-        group.add(light);
-
-        group.castShadow = true;
-        group.receiveShadow = true;
-        
-        // 加入物件系統
+        door.position.set(0, 1.5, 4.8); group.add(door);
+        // 燈光
+        const light = new THREE.PointLight(0x00ffff, 1, 15); light.position.set(0, 2, 0); group.add(light);
+        group.castShadow = true; group.receiveShadow = true;
         group.userData = { msg: "火星前哨站：任務開始的地方。", id: "base", radarColor: "#ffffff" };
-        scene.add(group);
-        objects.push(group);
+        scene.add(group); objects.push(group);
     }
 
     function createSolarPanel(x, z) {
         const y = getTerrainHeight(x, z);
-        const group = new THREE.Group();
-        group.position.set(x, y, z);
-        
-        // 支架
-        const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 3), new THREE.MeshStandardMaterial({color:0x888888}));
-        pole.position.y = 1.5;
-        group.add(pole);
-        
-        // 面板
-        const panel = new THREE.Mesh(new THREE.BoxGeometry(4, 0.1, 2), new THREE.MeshStandardMaterial({color:0x111133, roughness:0.2}));
-        panel.position.set(0, 3, 0);
-        panel.rotation.x = Math.PI / 4; // 面向太陽
-        group.add(panel);
-        
+        const group = new THREE.Group(); group.position.set(x, y, z);
+        const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 3), new THREE.MeshStandardMaterial({color:0x888888})); pole.position.y = 1.5; group.add(pole);
+        const panel = new THREE.Mesh(new THREE.BoxGeometry(4, 0.1, 2), new THREE.MeshStandardMaterial({color:0x111133})); panel.position.set(0, 3, 0); panel.rotation.x = Math.PI/4; group.add(panel);
         group.userData = { msg: "太陽能板：運作效率 98%。", id: "solar", radarColor: "#5555ff" };
-        scene.add(group);
-        objects.push(group);
+        scene.add(group); objects.push(group);
     }
 
     function createGenericObject(item) {
         const y = getTerrainHeight(item.x, item.z);
-        const group = new THREE.Group();
-        group.position.set(item.x, y, item.z);
+        const group = new THREE.Group(); group.position.set(item.x, y, item.z);
         let mesh, colorForRadar = "#ff0000";
-
         if (item.type === 'rover') {
             const chassis = new THREE.Mesh(new THREE.BoxGeometry(2, 1, 3), new THREE.MeshStandardMaterial({ color: 0xaaaaaa }));
-            chassis.position.y = 0.8;
-            group.add(chassis);
-            colorForRadar = "#ffaa00";
+            chassis.position.y = 0.8; group.add(chassis); colorForRadar = "#ffaa00";
         } else if (item.type === 'crystal') {
             for(let i=0; i<3; i++) {
-                const c = new THREE.Mesh(new THREE.ConeGeometry(0.4, 2 + i*0.5, 5), new THREE.MeshPhongMaterial({ color: 0x00ffff, emissive: 0x003333 }));
-                c.position.set((i-1)*0.5, 1, (Math.random()-0.5));
-                c.rotation.x = (Math.random()-0.5)*0.5;
-                group.add(c);
+                const c = new THREE.Mesh(new THREE.ConeGeometry(0.4, 2+i*0.5, 5), new THREE.MeshPhongMaterial({ color: 0x00ffff, emissive: 0x003333 }));
+                c.position.set((i-1)*0.5, 1, (Math.random()-0.5)); c.rotation.x = (Math.random()-0.5)*0.5; group.add(c);
             }
-            const l = new THREE.PointLight(0x00ffff, 1, 5); l.position.y=1; group.add(l);
-            colorForRadar = "#00ffff";
+            const l = new THREE.PointLight(0x00ffff, 1, 5); l.position.y=1; group.add(l); colorForRadar = "#00ffff";
         } else if (item.type === 'monolith') {
-            mesh = new THREE.Mesh(new THREE.BoxGeometry(2, 6, 0.5), new THREE.MeshStandardMaterial({ color: 0x111111, metalness:0.8, roughness:0.1 }));
-            mesh.position.y = 3;
-            group.add(mesh);
-            colorForRadar = "#ffffff";
+            mesh = new THREE.Mesh(new THREE.BoxGeometry(2, 6, 0.5), new THREE.MeshStandardMaterial({ color: 0x111111, metalness:0.8 }));
+            mesh.position.y = 3; group.add(mesh); colorForRadar = "#ffffff";
         } else if (item.type === 'skeleton') {
-            // 簡單模擬幾根肋骨
             const mat = new THREE.MeshStandardMaterial({color:0xdddddd});
             for(let i=0; i<5; i++) {
                 const rib = new THREE.Mesh(new THREE.TorusGeometry(1.5, 0.15, 8, 16, Math.PI), mat);
-                rib.position.set(0, 0, i*1.5 - 3);
-                rib.rotation.y = Math.PI/2;
-                group.add(rib);
+                rib.position.set(0, 0, i*1.5-3); rib.rotation.y = Math.PI/2; group.add(rib);
             }
             colorForRadar = "#aaaaaa";
         }
-
         group.traverse(c=>{if(c.isMesh){c.castShadow=true;c.receiveShadow=true;}});
         group.userData = { msg: item.desc, id: item.id, radarColor: colorForRadar };
-        scene.add(group);
-        objects.push(group);
+        scene.add(group); objects.push(group);
     }
 
-    // 根據清單生成物件
-    createBase(0, 0);
     missionItems.forEach(item => {
-        if (item.type !== 'base') {
-            if (item.type === 'solar') createSolarPanel(item.x, item.z);
-            else createGenericObject(item);
-        }
+        if (item.type === 'base') createBase(item.x, item.z);
+        else if (item.type === 'solar') createSolarPanel(item.x, item.z);
+        else createGenericObject(item);
     });
 
-    // 隨機生成一些無關緊要的石頭 (裝飾用，不進入清單)
     for(let i=0; i<20; i++) {
-        const rx = (Math.random()-0.5)*150;
-        const rz = (Math.random()-0.5)*150;
-        if (Math.abs(rx)>10 && Math.abs(rz)>10) { // 避開基地
+        const rx = (Math.random()-0.5)*150; const rz = (Math.random()-0.5)*150;
+        if (Math.sqrt((rx-10)**2 + (rz+10)**2) > 15) {
             const s = new THREE.Mesh(new THREE.DodecahedronGeometry(Math.random()*0.8+0.5), new THREE.MeshStandardMaterial({color:0x553333}));
-            s.position.set(rx, getTerrainHeight(rx, rz)+0.5, rz);
-            s.castShadow = true; scene.add(s);
-            // 這些石頭沒有 userData.id，所以不會觸發日誌
+            s.position.set(rx, getTerrainHeight(rx, rz)+0.5, rz); s.castShadow = true; scene.add(s);
             const g = new THREE.Group(); g.position.copy(s.position); g.userData = {msg:"普通石頭"}; objects.push(g);
         }
     }
@@ -421,10 +408,17 @@
     const mouse = new THREE.Vector2();
     let targetPosition = null;
     let isAutoMoving = false;
+    const discoveredSet = new Set();
     
-    const discoveredSet = new Set(); // 已探索的 ID
+    // 3. 計時器相關
+    let startTime = Date.now();
+    let isGameCompleted = false;
+    const timerDisplay = document.getElementById('timer-display');
+    const victoryModal = document.getElementById('victory-modal');
+    const finalTimeText = document.getElementById('final-time');
 
     window.addEventListener('keydown', (e) => {
+        if(isGameCompleted) return;
         if(['w','a','s','d'].includes(e.key)||e.key.startsWith('Arrow')){ isAutoMoving=false; 
             if(e.key==='w'||e.key==='ArrowUp') keys.w=true; if(e.key==='a'||e.key==='ArrowLeft') keys.a=true;
             if(e.key==='s'||e.key==='ArrowDown') keys.s=true; if(e.key==='d'||e.key==='ArrowRight') keys.d=true;
@@ -435,6 +429,7 @@
         if(e.key==='s'||e.key==='ArrowDown') keys.s=false; if(e.key==='d'||e.key==='ArrowRight') keys.d=false;
     });
     window.addEventListener('pointerdown', (event) => {
+        if(isGameCompleted) return;
         mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
         mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
         raycaster.setFromCamera(mouse, camera);
@@ -458,14 +453,13 @@
     function updateRadar() {
         radarCtx.clearRect(0, 0, radarCanvas.width, radarCanvas.height);
         radarCtx.strokeStyle = "rgba(60, 100, 60, 0.5)";
-        radarCtx.beginPath(); radarCtx.arc(radarCenter, radarCenter, 25, 0, Math.PI*2); radarCtx.stroke();
-        radarCtx.beginPath(); radarCtx.arc(radarCenter, radarCenter, 50, 0, Math.PI*2); radarCtx.stroke();
-        
+        radarCtx.beginPath(); radarCtx.arc(radarCenter, radarCenter, 20, 0, Math.PI*2); radarCtx.stroke();
+        radarCtx.beginPath(); radarCtx.arc(radarCenter, radarCenter, 40, 0, Math.PI*2); radarCtx.stroke();
         objects.forEach(obj => {
             if(obj.userData.radarColor) {
                 const dx = obj.position.x - penguin.position.x;
                 const dz = obj.position.z - penguin.position.z;
-                if (dx*dx + dz*dz < 3600) { // 60m range
+                if (dx*dx + dz*dz < 3600) {
                     radarCtx.fillStyle = obj.userData.radarColor;
                     radarCtx.beginPath();
                     radarCtx.arc(radarCenter + dx*radarScale, radarCenter + dz*radarScale, 2.5, 0, Math.PI*2);
@@ -479,14 +473,28 @@
         radarCtx.fillStyle = "rgba(0, 255, 0, 0.5)"; radarCtx.beginPath(); radarCtx.moveTo(0, -8); radarCtx.lineTo(4, 4); radarCtx.lineTo(-4, 4); radarCtx.fill(); radarCtx.restore();
     }
 
-    // 顯示通知特效
     function showNotification(text) {
-        const el = document.createElement('div');
-        el.className = 'notification';
-        el.innerText = text;
-        document.body.appendChild(el);
-        setTimeout(() => el.remove(), 2000);
+        const el = document.createElement('div'); el.className = 'notification'; el.innerText = text;
+        document.body.appendChild(el); setTimeout(() => el.remove(), 2000);
     }
+
+    // 完成遊戲
+    function finishGame() {
+        isGameCompleted = true;
+        const finalTime = ((Date.now() - startTime) / 1000).toFixed(1);
+        finalTimeText.innerText = finalTime + "s";
+        victoryModal.style.display = 'flex';
+    }
+
+    // 讓玩家繼續玩
+    window.continueGame = function() {
+        victoryModal.style.display = 'none';
+        // 讓操作恢復
+        isGameCompleted = false; 
+        // 不再更新計時器，或顯示為 Finished
+        timerDisplay.innerText = "Finished";
+        timerDisplay.style.color = "#00ff00";
+    };
 
     const msgBox = document.getElementById('message-box');
     let walkTime = 0;
@@ -494,51 +502,52 @@
     function animate() {
         requestAnimationFrame(animate);
 
-        // 移動與物理
-        let moveX=0, moveZ=0, isMoving=false;
-        let targetAngle = penguin.rotation.y;
-
-        if (keys.w || keys.s || keys.a || keys.d) {
-            if(keys.w) moveZ=-1; if(keys.s) moveZ=1; if(keys.a) moveX=-1; if(keys.d) moveX=1;
-            isMoving=true; targetAngle=Math.atan2(moveX, moveZ);
-        } else if (isAutoMoving && targetPosition) {
-            const dx = targetPosition.x - penguin.position.x;
-            const dz = targetPosition.z - penguin.position.z;
-            if (dx*dx + dz*dz > 0.1) {
-                isMoving=true; targetAngle=Math.atan2(dx, dz);
-                moveX=Math.sin(targetAngle); moveZ=Math.cos(targetAngle);
-            } else isAutoMoving=false;
+        // 更新計時器
+        if (!isGameCompleted && discoveredSet.size < missionItems.length) {
+            const t = ((Date.now() - startTime) / 1000).toFixed(1);
+            timerDisplay.innerText = t + "s";
+        } else if (discoveredSet.size === missionItems.length && !isGameCompleted) {
+            // 剛完成的那一刻
+            finishGame();
         }
 
-        if (isMoving) {
-            let diff = targetAngle - penguin.rotation.y;
-            while(diff > Math.PI) diff -= Math.PI*2; while(diff < -Math.PI) diff += Math.PI*2;
-            penguin.rotation.y += diff * 0.15;
-            penguin.position.x += moveX * 0.2;
-            penguin.position.z += moveZ * 0.2;
-            walkTime += 0.25;
-            penguin.rotation.z = Math.sin(walkTime) * 0.1;
-            // 圍巾飄動 (隨走路擺動)
-            scarf.rotation.x = 0.5 + Math.sin(walkTime * 2) * 0.5;
-            scarf.rotation.z = Math.cos(walkTime) * 0.3;
-        } else {
-            penguin.rotation.z *= 0.8;
-            // 圍巾靜止時微風吹動
-            scarf.rotation.x = 0.5 + Math.sin(Date.now()*0.005)*0.2;
-            scarf.rotation.z *= 0.9;
+        if(!isGameCompleted) {
+            let moveX=0, moveZ=0, isMoving=false;
+            let targetAngle = penguin.rotation.y;
+
+            if (keys.w || keys.s || keys.a || keys.d) {
+                if(keys.w) moveZ=-1; if(keys.s) moveZ=1; if(keys.a) moveX=-1; if(keys.d) moveX=1;
+                isMoving=true; targetAngle=Math.atan2(moveX, moveZ);
+            } else if (isAutoMoving && targetPosition) {
+                const dx = targetPosition.x - penguin.position.x;
+                const dz = targetPosition.z - penguin.position.z;
+                if (dx*dx + dz*dz > 0.1) {
+                    isMoving=true; targetAngle=Math.atan2(dx, dz);
+                    moveX=Math.sin(targetAngle); moveZ=Math.cos(targetAngle);
+                } else isAutoMoving=false;
+            }
+
+            if (isMoving) {
+                let diff = targetAngle - penguin.rotation.y;
+                while(diff > Math.PI) diff -= Math.PI*2; while(diff < -Math.PI) diff += Math.PI*2;
+                penguin.rotation.y += diff * 0.15;
+                penguin.position.x += moveX * 0.2;
+                penguin.position.z += moveZ * 0.2;
+                walkTime += 0.25;
+                penguin.rotation.z = Math.sin(walkTime) * 0.1;
+            } else {
+                penguin.rotation.z *= 0.8;
+            }
         }
 
-        // 地形高度修正
         const ty = getTerrainHeight(penguin.position.x, penguin.position.z);
         penguin.position.y = ty + 1.25 + Math.abs(Math.sin(walkTime)) * 0.2;
 
-        // 攝影機與手電筒
         flashLight.target.position.set(penguin.position.x + Math.sin(penguin.rotation.y)*5, penguin.position.y, penguin.position.z + Math.cos(penguin.rotation.y)*5);
         flashLight.target.updateMatrixWorld();
         camera.position.lerp(new THREE.Vector3(penguin.position.x+25, penguin.position.y+35, penguin.position.z+25), 0.1);
         camera.lookAt(penguin.position.x, penguin.position.y+1, penguin.position.z);
 
-        // UI 與互動
         updateRadar();
         if (clickMarker.material.opacity > 0) {
             clickMarker.scale.multiplyScalar(0.92); clickMarker.material.opacity -= 0.08;
@@ -548,18 +557,13 @@
         objects.forEach(obj => {
             if (penguin.position.distanceTo(obj.position) < 6) {
                 nearMsg = obj.userData.msg;
-                
-                // ★ 探索系統核心邏輯
                 const objId = obj.userData.id;
                 if (objId && !discoveredSet.has(objId)) {
-                    discoveredSet.add(objId); // 標記為已探索
-                    
-                    // 更新 UI
+                    discoveredSet.add(objId);
                     const li = document.getElementById('log-' + objId);
                     const itemData = missionItems.find(i => i.id === objId);
                     if (li && itemData) {
-                        li.innerText = itemData.name;
-                        li.className = 'found';
+                        li.innerText = itemData.name; li.className = 'found';
                         showNotification("發現: " + itemData.name);
                     }
                 }
