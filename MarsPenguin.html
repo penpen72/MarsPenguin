@@ -2,104 +2,68 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <!-- 4. 手機鎖定設定：禁止縮放，鎖定比例 -->
+    <!-- 手機鎖定設定 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>火星企鵝：探索完成版</title>
+    <title>火星企鵝：完美體驗版</title>
     <style>
         body { 
             margin: 0; 
             overflow: hidden; 
             font-family: "Microsoft JhengHei", sans-serif; 
             background-color: #0f0505;
-            /* 防止手機上的預設觸控行為 (如捲動、縮放) */
             touch-action: none; 
             user-select: none;
             -webkit-user-select: none;
         }
         
-        /* 左上：任務面板 */
+        /* UI 尺寸微調，適應小螢幕 */
         #mission-panel {
             position: absolute;
-            top: 20px;
-            left: 20px;
-            width: 200px;
+            top: 15px; left: 15px;
+            width: 180px; /* 稍微縮窄一點 */
             background: rgba(20, 30, 40, 0.9);
             border: 2px solid #446688;
             border-radius: 10px;
-            padding: 15px;
+            padding: 12px;
             color: #ccddff;
             box-shadow: 0 0 20px rgba(0, 150, 255, 0.2);
             pointer-events: none; 
             z-index: 10;
         }
         #mission-panel h2 {
-            margin: 0 0 5px 0;
-            font-size: 16px;
-            border-bottom: 1px solid #446688;
-            padding-bottom: 5px;
-            color: #00ffff;
+            margin: 0 0 5px 0; font-size: 15px; border-bottom: 1px solid #446688; padding-bottom: 5px; color: #00ffff;
         }
-        /* 3. 計時器樣式 */
         #timer-display {
-            font-size: 20px;
-            font-family: monospace;
-            color: #ffcc00;
-            font-weight: bold;
-            margin-bottom: 10px;
-            text-align: center;
-            background: rgba(0,0,0,0.3);
-            padding: 5px;
-            border-radius: 4px;
+            font-size: 18px; font-family: monospace; color: #ffcc00; font-weight: bold; margin-bottom: 5px;
+            text-align: center; background: rgba(0,0,0,0.3); padding: 3px; border-radius: 4px;
         }
-        #log-list {
-            list-style: none; padding: 0; margin: 0; font-size: 13px;
-        }
-        #log-list li { padding: 5px 0; color: #667788; transition: color 0.5s; }
-        #log-list li.found { color: #aaffaa; font-weight: bold; text-shadow: 0 0 5px rgba(0,255,0,0.5); }
+        #log-list { list-style: none; padding: 0; margin: 0; font-size: 12px; }
+        #log-list li { padding: 4px 0; color: #667788; transition: color 0.5s; }
+        #log-list li.found { color: #aaffaa; font-weight: bold; }
         #log-list li.found::before { content: "✔ "; }
         #log-list li::before { content: "○ "; }
 
-        /* 右上：雷達 */
         #radar-container {
-            position: absolute;
-            top: 20px; right: 20px;
-            width: 120px; height: 120px; /* 手機上稍微調小一點以免遮擋 */
+            position: absolute; top: 15px; right: 15px;
+            width: 100px; height: 100px; /* 雷達縮小一點避免擋路 */
             background: rgba(0, 20, 10, 0.85);
-            border-radius: 50%;
-            border: 3px solid #446644;
+            border-radius: 50%; border: 3px solid #446644;
             box-shadow: 0 0 15px rgba(50, 255, 50, 0.2);
-            overflow: hidden;
-            z-index: 10;
+            overflow: hidden; z-index: 10;
         }
 
-        /* 中下：訊息框 */
         #message-box {
-            position: absolute;
-            bottom: 30px; left: 50%;
-            transform: translateX(-50%);
-            background: rgba(20, 15, 15, 0.95);
-            color: #eebb99;
-            padding: 12px 25px;
-            border-radius: 5px;
-            font-size: 16px;
-            display: none;
-            box-shadow: 0 0 20px rgba(255, 100, 50, 0.2);
-            border: 2px solid #884444;
-            text-align: center;
-            min-width: 200px;
-            z-index: 10;
+            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+            background: rgba(20, 15, 15, 0.95); color: #eebb99;
+            padding: 10px 20px; border-radius: 5px; font-size: 15px;
+            display: none; box-shadow: 0 0 20px rgba(255, 100, 50, 0.2);
+            border: 2px solid #884444; text-align: center; min-width: 200px; z-index: 10;
         }
 
-        /* 探索通知 */
         .notification {
-            position: absolute; top: 40%; left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 24px; color: #ffff00;
-            font-weight: bold;
-            text-shadow: 0 0 10px orange;
-            pointer-events: none;
-            animation: floatUp 2s forwards;
-            z-index: 20;
+            position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 24px; color: #ffff00; font-weight: bold; text-shadow: 0 0 10px orange;
+            pointer-events: none; animation: floatUp 2s forwards; z-index: 20;
         }
         @keyframes floatUp {
             0% { opacity: 0; transform: translate(-50%, -30%); }
@@ -107,38 +71,32 @@
             100% { opacity: 0; transform: translate(-50%, -80%); }
         }
 
-        /* 3. 結算畫面 (Victory Modal) */
         #victory-modal {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            display: none; /* 預設隱藏 */
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-            z-index: 100;
-            backdrop-filter: blur(5px);
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.8); display: none;
+            justify-content: center; align-items: center; flex-direction: column;
+            z-index: 100; backdrop-filter: blur(5px);
         }
         .modal-content {
             background: linear-gradient(135deg, #2b1d1d, #442222);
-            padding: 40px;
-            border-radius: 15px;
-            border: 2px solid #ffaa00;
-            text-align: center;
-            box-shadow: 0 0 50px rgba(255, 100, 0, 0.5);
-            color: white;
-            max-width: 80%;
+            padding: 30px; border-radius: 15px; border: 2px solid #ffaa00;
+            text-align: center; box-shadow: 0 0 50px rgba(255, 100, 0, 0.5); color: white;
+            width: 80%; max-width: 400px;
         }
-        .modal-content h1 { margin-top: 0; color: #ffcc00; }
-        .modal-content .time-stat { font-size: 2rem; font-weight: bold; color: #00ffff; margin: 20px 0; }
+        .modal-content h1 { margin-top: 0; color: #ffcc00; font-size: 24px; }
+        .modal-content .time-stat { font-size: 2rem; font-weight: bold; color: #00ffff; margin: 15px 0; }
         .modal-btn {
-            padding: 10px 20px; margin: 10px;
-            font-size: 16px; border: none; border-radius: 5px;
-            cursor: pointer; font-weight: bold;
+            padding: 12px 24px; margin: 8px; font-size: 16px; border: none; border-radius: 5px;
+            cursor: pointer; font-weight: bold; width: 80%;
         }
         .btn-primary { background: #ffaa00; color: #330000; }
         .btn-secondary { background: #444; color: #ccc; }
-        .btn-primary:active, .btn-secondary:active { transform: scale(0.95); }
+        
+        /* 手機版按鈕優化 */
+        @media (max-width: 600px) {
+            .modal-content { padding: 20px; }
+            .modal-btn { padding: 15px 0; font-size: 18px; } /* 加大按鈕好點擊 */
+        }
 
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -152,7 +110,7 @@
 </div>
 
 <div id="radar-container">
-    <canvas id="radar-canvas" width="120" height="120"></canvas>
+    <canvas id="radar-canvas" width="100" height="100"></canvas>
 </div>
 
 <div id="message-box"></div>
@@ -172,19 +130,29 @@
 </div>
 
 <script>
-    // --- 1. 場景與手機優化 ---
+    // --- 1. 場景設定 ---
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x150a0a);
     scene.fog = new THREE.Fog(0x150a0a, 20, 90);
 
     const camera = new THREE.PerspectiveCamera(30, window.innerWidth / window.innerHeight, 0.1, 1000);
-    const cameraOffset = new THREE.Vector3(25, 35, 25);
+    
+    // ★ 手機優化：動態調整攝影機距離
+    const baseOffset = new THREE.Vector3(25, 35, 25); // 電腦版基礎距離
+    const cameraOffset = new THREE.Vector3();
+    
+    function updateCameraOffset() {
+        // 如果螢幕是直的 (手機)，就拉遠一點 (1.4倍)，讓視野變寬
+        const isPortrait = window.innerHeight > window.innerWidth;
+        const scale = isPortrait ? 1.4 : 1.0;
+        cameraOffset.copy(baseOffset).multiplyScalar(scale);
+    }
+    updateCameraOffset(); // 初始化執行一次
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    // 防止手機視網膜螢幕模糊
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); 
     document.body.appendChild(renderer.domElement);
 
@@ -196,10 +164,12 @@
     dirLight.castShadow = true;
     dirLight.shadow.mapSize.width = 2048;
     dirLight.shadow.mapSize.height = 2048;
-    dirLight.shadow.camera.top = 100;
-    dirLight.shadow.camera.bottom = -100;
-    dirLight.shadow.camera.left = -100;
-    dirLight.shadow.camera.right = 100;
+    // 擴大陰影範圍
+    const d = 100;
+    dirLight.shadow.camera.left = -d;
+    dirLight.shadow.camera.right = d;
+    dirLight.shadow.camera.top = d;
+    dirLight.shadow.camera.bottom = -d;
     scene.add(dirLight);
 
     // --- 2. 地形 ---
@@ -208,7 +178,6 @@
         const scale2 = 0.15;
         let y = Math.sin(x * scale1) * 2 + Math.cos(z * scale1) * 2;
         y += Math.sin(x * scale2 + z * scale2) * 0.5;
-        // 基地周圍 (10, -10) 平坦化
         const distToBase = Math.sqrt((x-10)*(x-10) + (z+10)*(z+10));
         if (distToBase < 15) {
             y = y * (distToBase / 15); 
@@ -237,7 +206,7 @@
     for (let i = 0; i < 2000; i++) {
         const x = (Math.random() - 0.5) * 200;
         const z = (Math.random() - 0.5) * 200;
-        if (Math.sqrt((x-10)*(x-10) + (z+10)*(z+10)) > 12) { // 避開新基地位置
+        if (Math.sqrt((x-10)*(x-10) + (z+10)*(z+10)) > 12) { 
             dummy.position.set(x, getTerrainHeight(x, z) + 0.1, z);
             dummy.rotation.set(Math.random()*3, Math.random()*3, Math.random()*3);
             const s = 0.5 + Math.random();
@@ -250,20 +219,17 @@
     pebbleMesh.castShadow = true;
     scene.add(pebbleMesh);
 
-    // --- 3. 企鵝主角 (移除圍巾) ---
+    // --- 3. 企鵝主角 ---
     const penguin = new THREE.Group();
     const penguinScale = 1.2;
     penguin.scale.set(penguinScale, penguinScale, penguinScale);
-    // 設定初始位置為 0,0 (基地在旁邊)
     penguin.position.set(0, 0, 0);
 
-    // 身體
     const body = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 1, 2.5, 16), new THREE.MeshLambertMaterial({ color: 0x222222 }));
     body.position.y = 1.25; body.castShadow = true; penguin.add(body);
     const belly = new THREE.Mesh(new THREE.SphereGeometry(0.75, 16, 16), new THREE.MeshLambertMaterial({ color: 0xffffff }));
     belly.position.set(0, 1, 0.3); belly.scale.set(1, 1.5, 0.5); penguin.add(belly);
     
-    // 眼睛
     const eyeGeo = new THREE.SphereGeometry(0.1, 8, 8);
     const eyeMat = new THREE.MeshBasicMaterial({ color: 0xffff00 });
     const lEye = new THREE.Mesh(eyeGeo, eyeMat); lEye.position.set(-0.3, 2.1, 0.65); penguin.add(lEye);
@@ -271,43 +237,31 @@
     const beak = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.5, 16), new THREE.MeshLambertMaterial({ color: 0xffa500 }));
     beak.rotation.x = Math.PI/2; beak.position.set(0, 1.9, 0.9); penguin.add(beak);
     
-    // 氧氣背包 (保留)
     const packGeo = new THREE.BoxGeometry(1.2, 1.5, 0.6);
     const packMat = new THREE.MeshStandardMaterial({ color: 0xeeeeee });
     const backpack = new THREE.Mesh(packGeo, packMat);
-    backpack.position.set(0, 1.2, -0.6);
-    backpack.castShadow = true;
-    penguin.add(backpack);
+    backpack.position.set(0, 1.2, -0.6); backpack.castShadow = true; penguin.add(backpack);
     
-    // 天線
-    const antGeo = new THREE.CylinderGeometry(0.05, 0.05, 0.8);
-    const ant = new THREE.Mesh(antGeo, new THREE.MeshStandardMaterial({color:0x888888}));
-    ant.position.set(0.4, 2, -0.6);
-    penguin.add(ant);
+    const ant = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.8), new THREE.MeshStandardMaterial({color:0x888888}));
+    ant.position.set(0.4, 2, -0.6); penguin.add(ant);
     const antLight = new THREE.Mesh(new THREE.SphereGeometry(0.1), new THREE.MeshBasicMaterial({color:0xff0000}));
-    antLight.position.set(0, 0.4, 0);
-    ant.add(antLight);
+    antLight.position.set(0, 0.4, 0); ant.add(antLight);
 
-    // 翅膀
     const wGeo = new THREE.BoxGeometry(0.2, 1, 0.6);
     const wMat = new THREE.MeshLambertMaterial({ color: 0x222222 });
     const wL = new THREE.Mesh(wGeo, wMat); wL.position.set(-0.9, 1.5, 0); wL.rotation.z = 0.3; penguin.add(wL);
     const wR = new THREE.Mesh(wGeo, wMat); wR.position.set(0.9, 1.5, 0); wR.rotation.z = -0.3; penguin.add(wR);
     
-    // 頭盔
     const helmet = new THREE.Mesh(new THREE.SphereGeometry(1.4, 32, 32), new THREE.MeshPhongMaterial({ color: 0x88ccff, opacity: 0.25, transparent: true, shininess: 150 }));
     helmet.position.y = 1.8; penguin.add(helmet);
     
-    // 手電筒
     const flashLight = new THREE.SpotLight(0xffffff, 1, 40, Math.PI/6, 0.5, 1);
     flashLight.position.set(0, 3, 0);
     flashLight.target.position.set(0, 1, 5);
-    penguin.add(flashLight);
-    penguin.add(flashLight.target);
+    penguin.add(flashLight); penguin.add(flashLight.target);
 
     scene.add(penguin);
 
-    // 點擊光圈
     const clickMarker = new THREE.Mesh(new THREE.RingGeometry(0.4, 0.6, 32), new THREE.MeshBasicMaterial({ color: 0xffaa00, transparent: true, opacity: 0, side: THREE.DoubleSide }));
     clickMarker.rotation.x = -Math.PI / 2;
     scene.add(clickMarker);
@@ -316,7 +270,6 @@
     const objects = [];
     const discoveryLog = document.getElementById('log-list');
     
-    // 2. 基地位置改到 (10, -10)，稍微遠離原點
     const missionItems = [
         { id: 'base', name: "火星前哨站", desc: "這是我的家，溫暖又安全。", x: 10, z: -10, type: 'base' },
         { id: 'rover1', name: "好奇號殘骸", desc: "看起來還能修好...大概吧？", x: 35, z: -40, type: 'rover' },
@@ -335,14 +288,11 @@
 
     function createBase(x, z) {
         const y = getTerrainHeight(x, z);
-        const group = new THREE.Group();
-        group.position.set(x, y, z);
+        const group = new THREE.Group(); group.position.set(x, y, z);
         const dome = new THREE.Mesh(new THREE.SphereGeometry(5, 32, 16, 0, Math.PI*2, 0, Math.PI/2), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3, metalness: 0.5 }));
         group.add(dome);
-        // 門
         const door = new THREE.Mesh(new THREE.BoxGeometry(2, 3, 1), new THREE.MeshStandardMaterial({color:0x333333}));
         door.position.set(0, 1.5, 4.8); group.add(door);
-        // 燈光
         const light = new THREE.PointLight(0x00ffff, 1, 15); light.position.set(0, 2, 0); group.add(light);
         group.castShadow = true; group.receiveShadow = true;
         group.userData = { msg: "火星前哨站：任務開始的地方。", id: "base", radarColor: "#ffffff" };
@@ -410,15 +360,17 @@
     let isAutoMoving = false;
     const discoveredSet = new Set();
     
-    // 3. 計時器相關
     let startTime = Date.now();
-    let isGameCompleted = false;
+    let isGameCompleted = false; 
+    // ★ 新增：無盡模式旗標，防止「繼續遊玩」後重複觸發勝利
+    let isEndlessMode = false; 
+
     const timerDisplay = document.getElementById('timer-display');
     const victoryModal = document.getElementById('victory-modal');
     const finalTimeText = document.getElementById('final-time');
 
     window.addEventListener('keydown', (e) => {
-        if(isGameCompleted) return;
+        if(isGameCompleted && !isEndlessMode) return; // 只有在還沒繼續遊玩前鎖定
         if(['w','a','s','d'].includes(e.key)||e.key.startsWith('Arrow')){ isAutoMoving=false; 
             if(e.key==='w'||e.key==='ArrowUp') keys.w=true; if(e.key==='a'||e.key==='ArrowLeft') keys.a=true;
             if(e.key==='s'||e.key==='ArrowDown') keys.s=true; if(e.key==='d'||e.key==='ArrowRight') keys.d=true;
@@ -429,7 +381,7 @@
         if(e.key==='s'||e.key==='ArrowDown') keys.s=false; if(e.key==='d'||e.key==='ArrowRight') keys.d=false;
     });
     window.addEventListener('pointerdown', (event) => {
-        if(isGameCompleted) return;
+        if(isGameCompleted && !isEndlessMode) return;
         mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
         mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
         raycaster.setFromCamera(mouse, camera);
@@ -444,7 +396,6 @@
         }
     });
 
-    // 雷達
     const radarCanvas = document.getElementById('radar-canvas');
     const radarCtx = radarCanvas.getContext('2d');
     const radarScale = radarCanvas.width / 120;
@@ -478,7 +429,6 @@
         document.body.appendChild(el); setTimeout(() => el.remove(), 2000);
     }
 
-    // 完成遊戲
     function finishGame() {
         isGameCompleted = true;
         const finalTime = ((Date.now() - startTime) / 1000).toFixed(1);
@@ -486,13 +436,12 @@
         victoryModal.style.display = 'flex';
     }
 
-    // 讓玩家繼續玩
+    // ★ 修復：繼續遊玩邏輯
     window.continueGame = function() {
         victoryModal.style.display = 'none';
-        // 讓操作恢復
-        isGameCompleted = false; 
-        // 不再更新計時器，或顯示為 Finished
-        timerDisplay.innerText = "Finished";
+        isGameCompleted = false; // 解鎖操作
+        isEndlessMode = true;    // 啟動無盡模式，阻止再次觸發 finishGame
+        timerDisplay.innerText = "Free Roam";
         timerDisplay.style.color = "#00ff00";
     };
 
@@ -502,16 +451,18 @@
     function animate() {
         requestAnimationFrame(animate);
 
-        // 更新計時器
-        if (!isGameCompleted && discoveredSet.size < missionItems.length) {
-            const t = ((Date.now() - startTime) / 1000).toFixed(1);
-            timerDisplay.innerText = t + "s";
-        } else if (discoveredSet.size === missionItems.length && !isGameCompleted) {
-            // 剛完成的那一刻
-            finishGame();
+        // ★ 修正：勝利條件檢測增加 isEndlessMode 判斷
+        if (!isGameCompleted && !isEndlessMode) {
+            if (discoveredSet.size < missionItems.length) {
+                const t = ((Date.now() - startTime) / 1000).toFixed(1);
+                timerDisplay.innerText = t + "s";
+            } else {
+                finishGame();
+            }
         }
 
-        if(!isGameCompleted) {
+        // 物理與移動
+        if(!isGameCompleted) { // 只要沒鎖定就可以動 (包含無盡模式)
             let moveX=0, moveZ=0, isMoving=false;
             let targetAngle = penguin.rotation.y;
 
@@ -545,7 +496,13 @@
 
         flashLight.target.position.set(penguin.position.x + Math.sin(penguin.rotation.y)*5, penguin.position.y, penguin.position.z + Math.cos(penguin.rotation.y)*5);
         flashLight.target.updateMatrixWorld();
-        camera.position.lerp(new THREE.Vector3(penguin.position.x+25, penguin.position.y+35, penguin.position.z+25), 0.1);
+
+        // 攝影機跟隨 (使用動態 offset)
+        camera.position.lerp(new THREE.Vector3(
+            penguin.position.x + cameraOffset.x, 
+            penguin.position.y + cameraOffset.y, 
+            penguin.position.z + cameraOffset.z
+        ), 0.1);
         camera.lookAt(penguin.position.x, penguin.position.y+1, penguin.position.z);
 
         updateRadar();
@@ -558,6 +515,7 @@
             if (penguin.position.distanceTo(obj.position) < 6) {
                 nearMsg = obj.userData.msg;
                 const objId = obj.userData.id;
+                // 如果發現新東西，且不在無盡模式，或者在無盡模式但尚未記錄到 set (雖然理論上都記錄完了)
                 if (objId && !discoveredSet.has(objId)) {
                     discoveredSet.add(objId);
                     const li = document.getElementById('log-' + objId);
@@ -576,9 +534,12 @@
         renderer.render(scene, camera);
     }
     
+    // ★ 視窗調整時重新計算攝影機距離
     window.addEventListener('resize', () => {
+        updateCameraOffset(); // 重新計算距離
         camera.aspect = window.innerWidth/window.innerHeight;
-        camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight);
+        camera.updateProjectionMatrix(); 
+        renderer.setSize(window.innerWidth, window.innerHeight);
     });
     animate();
 </script>
